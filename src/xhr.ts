@@ -1,17 +1,29 @@
-import { AxiosRequestConfig, AxiosPromis, AxiosResponse } from './types/types'
-
-export default function xhr(config: AxiosRequestConfig): AxiosPromis {
-  return new Promise(resolve => {
-    const { data = null, url, method = 'get', headers, responseType } = config
+import { AxiosRequestConfig, AxiosPromise, AxiosResponse } from './types'
+import { parseHeaders } from './helpers/headers'
+import { createError } from './helpers/error'
+export default function xhr(config: AxiosRequestConfig): AxiosPromise {
+  return new Promise((resolve, reject) => {
+    const { data = null, url, method = 'get', headers, responseType, timeout } = config
 
     const request = new XMLHttpRequest()
+    if (responseType) {
+      request.responseType = responseType
+    }
+
+    if (timeout) {
+      request.timeout = timeout
+    }
 
     request.open(method.toLowerCase(), url, true)
+
     request.onreadystatechange = function handloader() {
-      if (request.readyState === 4) {
+      if (request.readyState !== 4) {
         return
       }
-      const responseHeader = request.getAllResponseHeaders()
+      if (request.status === 0) {
+        return
+      }
+      const responseHeader = parseHeaders(request.getAllResponseHeaders())
       const responseData = responseType !== 'text' ? request.response : request.responseText
       const response: AxiosResponse = {
         data: responseData,
@@ -21,8 +33,17 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromis {
         config,
         request
       }
-      resolve(response)
+      handleResponse(response)
     }
+
+    request.onerror = function handleError() {
+      reject(createError('Network Error', config, null, request))
+    }
+
+    request.ontimeout = function handleTimeout() {
+      reject(createError(`Timeout of ${timeout} ms exceeded`, config, 'ECONNABORTED', request))
+    }
+
     Object.keys(headers).forEach(name => {
       if (!data && name.toLowerCase() === 'content-type') {
         delete headers[name]
@@ -30,6 +51,22 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromis {
         request.setRequestHeader(name, headers[name])
       }
     })
+
+    function handleResponse(response: AxiosResponse): void {
+      if (response.status >= 200 && response.status < 300) {
+        resolve(response)
+      } else {
+        reject(
+          createError(
+            `Request failed with status code ${response.status}`,
+            config,
+            null,
+            request,
+            response
+          )
+        )
+      }
+    }
 
     request.send(data)
   })
