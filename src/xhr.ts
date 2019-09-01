@@ -14,7 +14,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
       request.timeout = timeout
     }
 
-    request.open(method.toLowerCase(), url, true)
+    request.open(method.toLowerCase(), url!, true)
 
     request.onreadystatechange = function handloader() {
       if (request.readyState !== 4) {
