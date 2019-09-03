@@ -1,4 +1,5 @@
 import { AxiosRequestConfig } from '../types'
+import { isPlainObject, deepMerge } from '../helpers/util'
 
 const starts = Object.create(null)
 
@@ -11,9 +12,26 @@ function formVal2Start(val1: any, val2: any): any {
     return val2
   }
 }
+function deepMergeStart(val1: any, val2: any): any {
+  if (isPlainObject(val2)) {
+    return deepMerge(val1, val2)
+  } else if (typeof val2 !== 'undefined') {
+    return val2
+  } else if (isPlainObject(val1)) {
+    return deepMerge(val1)
+  } else if (typeof val1 !== 'undefined') {
+    return val1
+  }
+}
+
 const startKeyFromVal2 = ['url', 'params', 'data']
 startKeyFromVal2.forEach(key => {
   starts[key] = formVal2Start
+})
+
+const startKeysDeepMerge = ['header']
+startKeysDeepMerge.forEach(key => {
+  starts[key] = deepMergeStart
 })
 export default function mergeConfig(
   config1: AxiosRequestConfig,

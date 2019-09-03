@@ -8,6 +8,7 @@ import {
 } from '../types'
 import dispatchRequst from './dispatchRequest'
 import InterceptorManager from './intercetorManager'
+import mergeConfig from './mergeConfig'
 
 interface Interceptors {
   request: InterceptorManager<AxiosRequestConfig>
@@ -40,8 +41,9 @@ export default class Axios {
     } else {
       config = url
     }
-
+    config = mergeConfig(this.defaults, config) // 合并请求头的配置
     const chain: PromiseChain<any>[] = [
+      // 拦截器
       {
         resolved: dispatchRequst,
         rejected: undefined
