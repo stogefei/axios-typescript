@@ -1,6 +1,8 @@
 import { request } from 'https'
 import { transformRequest } from '../helpers/data'
 import Axios from '../core/Axios'
+import CancelToken from '../cancel/CancelToken'
+import { isCancel } from '../cancel/Cancel'
 
 export type Method =
   | 'get'
@@ -29,6 +31,12 @@ export interface AxiosRequestConfig {
   timeout?: number
   transformRequest?: AxiosTransformer | AxiosTransformer[]
   transformResponse?: AxiosTransformer | AxiosTransformer[]
+  cancelToken?: CancelToken
+  withCredentials?: boolean
+  xsrfCookieName?: string
+  xsrfHeaderName?: string
+  onDownloadProgress?: (e: ProgressEvent) => void
+  onUploadProgress?: (e: ProgressEvent) => void
   [propName: string]: any
 }
 
@@ -73,6 +81,14 @@ export interface AxiosIntance extends Axios {
   <T>(config: AxiosRequestConfig): AxiosPromise<T>
   <T>(url: string, config?: AxiosRequestConfig): AxiosPromise<T>
 }
+
+export interface AxiosStatic extends AxiosIntance {
+  create(config?: AxiosRequestConfig): AxiosIntance
+
+  CancelToken: CancelTokenStatic
+  Cancel: CancelStatic
+  isCancel: (value: any) => boolean
+}
 //拦截器
 export interface AxiosIntercetorManager<T> {
   use(resolved: ResolvedFn<T>, reject?: RejectedFn): number
@@ -90,4 +106,38 @@ export interface RejectedFn {
 
 export interface AxiosTransformer {
   (data: any, headers?: any): any
+}
+
+export interface CancelToken {
+  promise: Promise<Cancel>
+  reason?: Cancel
+  throwIfRequested(): void
+}
+
+export interface Canceler {
+  (message?: string): void
+}
+
+export interface CancelExecutor {
+  (cancel: Canceler): void
+}
+
+export interface CancelTokenSource {
+  token: CancelToken
+  cancel: Canceler
+}
+
+// 类类型
+export interface CancelTokenStatic {
+  new (executor: CancelExecutor): CancelToken
+
+  source(): CancelTokenSource
+}
+
+export interface Cancel {
+  message?: string
+}
+
+export interface CancelStatic {
+  new (message?: string): Cancel
 }

@@ -13,6 +13,10 @@ export function isPlainObject(val: any): val is Object {
   return toString.call(val) === '[Object,Object]'
 }
 
+export function isFormData(val: any): val is FormData {
+  return typeof val !== 'undefined' && val instanceof FormData
+}
+
 export function extend<T, U>(to: T, from: U): T & U {
   for (const key in from) {
     ;(to as T & U)[key] = from[key] as any
@@ -24,18 +28,20 @@ export function deepMerge(...objs: any[]): any {
   const result = Object.create(null)
 
   objs.forEach(obj => {
-    Object.keys(obj).forEach(key => {
-      const val = obj[key]
-      if (isPlainObject(val)) {
-        if (isPlainObject(result[key])) {
-          result[key] = deepMerge(val)
+    if (obj) {
+      Object.keys(obj).forEach(key => {
+        const val = obj[key]
+        if (isPlainObject(val)) {
+          if (isPlainObject(result[key])) {
+            result[key] = deepMerge(val)
+          } else {
+            result[key] = deepMerge(val)
+          }
         } else {
-          result[key] = deepMerge(val)
+          result[key] = val
         }
-      } else {
-        result[key] = val
-      }
-    })
+      })
+    }
   })
   return result
 }
