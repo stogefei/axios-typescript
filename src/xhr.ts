@@ -19,7 +19,9 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
       xsrfCookieName,
       xsrfHeaderName,
       onDownloadProgress,
-      onUploadProgress
+      onUploadProgress,
+      auth,
+      validateStatus
     } = config
 
     const request = new XMLHttpRequest()
@@ -103,11 +105,11 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
           headers[xsrfHeaderName!] = xsrfValue
         }
       }
-      // if (auth) {
-      //   headers['Authorization'] = `Basic ${btoa(`${auth.username} : ${auth.password}`)}`
-      // }
+      if (auth) {
+        headers['Authorization'] = `Basic ${btoa(`${auth.username} : ${auth.password}`)}`
+      }
       Object.keys(headers).forEach(name => {
-        if (!data && name.toLowerCase() === 'content-type') {
+        if (data === null && name.toLowerCase() === 'content-type') {
           delete headers[name]
         } else {
           request.setRequestHeader(name, headers[name])
@@ -117,15 +119,20 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
 
     function processCancel(): void {
       if (cancelToken) {
-        cancelToken.promise.then(reason => {
-          request.abort()
-          reject(reason)
-        })
+        cancelToken.promise
+          .then(reason => {
+            request.abort()
+            reject(reason)
+          })
+          .catch(() => {
+            // do nothing
+          })
       }
     }
 
     function handleResponse(response: AxiosResponse): void {
-      if (response.status >= 200 && response.status < 300) {
+      const { status } = response
+      if (!validateStatus || validateStatus(status)) {
         resolve(response)
       } else {
         reject(

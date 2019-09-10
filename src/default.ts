@@ -4,9 +4,7 @@ import { processHeaders } from './helpers/headers'
 
 const defaults: AxiosRequestConfig = {
   method: 'get',
-
   timeout: 0,
-
   headers: {
     common: {
       Accept: 'application/json, text/plain, */*'
@@ -16,17 +14,19 @@ const defaults: AxiosRequestConfig = {
   xsrfHeaderName: 'X-XSRF-TOKEN',
   transformRequest: [
     function(data: any, headers: any): any {
+      // 处理headers
       processHeaders(headers, data)
       return transformRequest(data)
     }
   ],
-
   transformResponse: [
     function(data: any): any {
-      // processHeaders(headers,data)
       return transformResponse(data)
     }
-  ]
+  ],
+  validateStatus(status): boolean {
+    return status >= 200 && status < 300
+  }
 }
 
 const methodsNoData = ['delete', 'get', 'head', 'options']

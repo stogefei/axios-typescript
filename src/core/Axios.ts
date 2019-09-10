@@ -6,7 +6,7 @@ import {
   ResolvedFn,
   RejectedFn
 } from '../types'
-import dispatchRequst from './dispatchRequest'
+import dispatchRequst, { transformUrl } from './dispatchRequest'
 import InterceptorManager from './intercetorManager'
 import mergeConfig from './mergeConfig'
 
@@ -92,7 +92,10 @@ export default class Axios {
   patch(url: string, data?: any, config?: AxiosRequestConfig): AxiosPromise {
     return this._requestMethodWithData('patch', url, data, config)
   }
-
+  getUrl(config?: AxiosRequestConfig): string {
+    config = mergeConfig(this.defaults, config)
+    return transformUrl(config)
+  }
   _requestMethodWithoutData(
     method: Method,
     url: string,

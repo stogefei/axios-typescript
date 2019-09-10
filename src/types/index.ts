@@ -1,9 +1,3 @@
-import { request } from 'https'
-import { transformRequest } from '../helpers/data'
-import Axios from '../core/Axios'
-import CancelToken from '../cancel/CancelToken'
-import { isCancel } from '../cancel/Cancel'
-
 export type Method =
   | 'get'
   | 'GET'
@@ -37,6 +31,11 @@ export interface AxiosRequestConfig {
   xsrfHeaderName?: string
   onDownloadProgress?: (e: ProgressEvent) => void
   onUploadProgress?: (e: ProgressEvent) => void
+  auth?: AxiosBasicCredentials
+  // 自定义合法状态码
+  validateStatus?: (status: number) => boolean
+  paramsSerializer?: (params: any) => string
+  baseURL?: string
   [propName: string]: any
 }
 
@@ -63,18 +62,20 @@ export interface AxiosError extends Error {
 export interface Axios {
   defaults: AxiosRequestConfig
   interceptors: {
-    request: AxiosIntercetorManager<AxiosRequestConfig>
-    response: AxiosIntercetorManager<AxiosResponse>
+    request: AxiosInterceptorManager<AxiosRequestConfig>
+    response: AxiosInterceptorManager<AxiosResponse>
   }
   request<T = any>(config: AxiosRequestConfig): AxiosPromise<T>
   get<T = any>(url: string, config?: AxiosRequestConfig): AxiosPromise<T>
   delete<T = any>(url: string, config?: AxiosRequestConfig): AxiosPromise<T>
   head<T = any>(url: string, config?: AxiosRequestConfig): AxiosPromise<T>
-  option<T = any>(url: string, config?: AxiosRequestConfig): AxiosPromise<T>
+  options<T = any>(url: string, config?: AxiosRequestConfig): AxiosPromise<T>
 
   post<T = any>(url: string, data?: any, config?: AxiosPromise): AxiosPromise<T>
   put<T = any>(url: string, data?: any, config?: AxiosPromise): AxiosPromise<T>
   patch<T = any>(url: string, data?: any, config?: AxiosPromise): AxiosPromise<T>
+
+  getUrl(config?: AxiosRequestConfig): string
 }
 
 export interface AxiosIntance extends Axios {
@@ -88,9 +89,20 @@ export interface AxiosStatic extends AxiosIntance {
   CancelToken: CancelTokenStatic
   Cancel: CancelStatic
   isCancel: (value: any) => boolean
+
+  all<T>(promises: Array<T | Promise<T>>): Promise<T[]>
+
+  spread<T, R>(callback: (...args: T[]) => R): (arr: T[]) => R
+
+  Axios: AxiosClassStatic
 }
+
+export interface AxiosClassStatic {
+  new (config: AxiosRequestConfig): Axios
+}
+
 //拦截器
-export interface AxiosIntercetorManager<T> {
+export interface AxiosInterceptorManager<T> {
   use(resolved: ResolvedFn<T>, reject?: RejectedFn): number
 
   eject(id: number): void
@@ -140,4 +152,9 @@ export interface Cancel {
 
 export interface CancelStatic {
   new (message?: string): Cancel
+}
+
+export interface AxiosBasicCredentials {
+  username: string
+  password: string
 }
